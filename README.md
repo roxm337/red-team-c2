@@ -28,6 +28,20 @@ A comprehensive Command and Control (C2) server built with FastAPI, featuring re
 - Health monitoring
 - RESTful API design
 
+## Screenshots
+
+### Web Dashboard
+![C2 Server Dashboard](screens/1.png)
+*Main dashboard showing connected agents and command execution interface*
+
+### Agent Management
+![Agent Management](screens/2.png)
+*Agent management interface with real-time status monitoring*
+
+### Command Execution
+![Command Execution](screens/3.png)
+*Command execution interface with live results and output formatting*
+
 ## Installation
 
 1. **Clone the repository**:
@@ -56,12 +70,59 @@ A comprehensive Command and Control (C2) server built with FastAPI, featuring re
    The server will start on `http://localhost:8000`
 
 2. **Access the Web Dashboard**:
-   Open your browser and navigate to `http://localhost:8000`
+   Open your browser and navigate to:
+   - **Main Dashboard**: `http://localhost:8000/`
+   - **Simple Dashboard**: `http://localhost:8000/simple` (Recommended)
+   - **API Documentation**: `http://localhost:8000/docs`
 
 3. **Run a Sample Agent**:
    ```bash
+   # Basic agent
    python3 sample_agent.py
+   
+   # Advanced cross-platform agent
+   python3 advanced_client.py --client-id my-agent
+   
+   # Platform-specific agents
+   python3 mac_client.py --client-id mac-agent
+   python3 linux_client.py --client-id linux-agent
+   python3 windows_client.py --client-id windows-agent
    ```
+
+## Client Types
+
+### Basic Client (`sample_agent.py`)
+- Simple demonstration client
+- Basic command execution
+- Perfect for testing and learning
+
+### Advanced Client (`advanced_client.py`)
+- Cross-platform support (Windows, Linux, macOS)
+- Full feature set including:
+  - System information gathering
+  - Screenshot capabilities
+  - Process monitoring
+  - File transfer
+  - Heartbeat monitoring
+
+### Platform-Specific Clients
+- **macOS Client** (`mac_client.py`):
+  - macOS-specific system information
+  - LaunchDaemon management
+  - System preferences access
+  - Security information gathering
+
+- **Linux Client** (`linux_client.py`):
+  - Linux system information
+  - systemd service management
+  - Package management info
+  - Kernel information
+
+- **Windows Client** (`windows_client.py`):
+  - Windows-specific APIs
+  - Registry access
+  - Windows services management
+  - WMI integration
 
 ## Configuration
 
