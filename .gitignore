@@ -1,0 +1,72 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# C2 Server specific
+uploads/*
+downloads/*
+logs/
+*.log
+
+# Project directories
+demos/
+tests/
+docs/
+
+# Test files
+test_file.txt
+demo_file.txt
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Secrets
+.env.local
+.env.production
+secrets.json
