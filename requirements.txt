@@ -1,0 +1,19 @@
+fastapi>=0.100.0
+uvicorn[standard]>=0.20.0
+pydantic>=2.0.0
+python-multipart>=0.0.5
+jinja2>=3.0.0
+aiofiles>=23.0.0
+websockets>=11.0
+python-dotenv>=1.0.0
+
+# Client dependencies
+requests>=2.25.0
+psutil>=5.8.0
+Pillow>=8.0.0
+pyautogui>=0.9.50
+
+# Optional dependencies for advanced features
+pynput>=1.7.0  # For keylogger functionality
+pywin32>=300; sys_platform == "win32"  # Windows-specific features
+dbus-python>=1.2.0; sys_platform == "linux"  # Linux-specific features
