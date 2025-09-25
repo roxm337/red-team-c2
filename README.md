@@ -56,15 +56,15 @@ A comprehensive Command and Control (C2) server built with FastAPI, featuring re
 ## 📸 Screenshots
 
 ### Advanced Client Builder GUI
-![Advanced Client Builder](screens/advanced_client_builder.png)
+![Advanced Client Builder](screens/1.png)
 *Professional GUI with tabbed interface, presets, and advanced configuration options*
 
 ### Enhanced Web Dashboard
-![Enhanced Dashboard](screens/enhanced_dashboard.png)
+![Enhanced Dashboard](screens/2.png)
 *Dashboard showing connected agents with capabilities and enhanced controls*
 
 ### Command Execution Interface
-![Command Execution](screens/command_execution.png)
+![Command Execution](screens/3.png)
 *Advanced command execution with real-time results and output formatting*
 
 ## 📦 Installation
