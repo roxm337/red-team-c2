@@ -51,6 +51,7 @@ uploads/*
 downloads/*
 logs/
 *.log
+telegram_c2/*
 
 # Project directories
 demos/

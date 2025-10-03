@@ -2,6 +2,10 @@
 
 A comprehensive Command and Control (C2) server built with FastAPI, featuring real-time agent management, advanced capabilities, and a professional red teaming interface. This platform is designed for advanced red team operations with extensive stealth, persistence, and evasion features.
 
+## 🌟 New: Telegram Bot C2 Server
+
+In addition to the traditional HTTP-based server, we now include a **Telegram-based C2 server** that allows you to control agents through a Telegram bot instead of a web interface!
+
 ## 🔥 New Features in Enhanced Version
 
 ### Advanced Client Builder GUI
@@ -19,6 +23,7 @@ A comprehensive Command and Control (C2) server built with FastAPI, featuring re
 - **Advanced Command Interface**: Screenshot and keylogger controls with capability detection
 - **Capability-Based UI**: Dynamic dashboard controls based on agent capabilities
 - **Enhanced API Endpoints**: New endpoints for advanced features with proper capability checking
+- **NEW: Telegram Bot Integration**: Full C2 functionality available through Telegram bot commands
 
 ## 🚀 Features
 
@@ -37,6 +42,7 @@ A comprehensive Command and Control (C2) server built with FastAPI, featuring re
 - **Data Exfiltration**: Secure file transfer with encryption and obfuscation
 - **Surveillance Capabilities**: Screenshot capture, keylogging, webcam/microphone access
 - **Lateral Movement**: Privilege escalation, process injection, UAC bypass
+- **NEW: Telegram Bot C2**: Control agents through Telegram bot commands instead of HTTP requests
 
 ### Security & Obfuscation Features
 - **Encryption**: AES-256, ChaCha20 encryption with key management
@@ -142,6 +148,42 @@ python3 mac_client.py --client-id mac-agent --stealth --disable-logging
 python3 linux_client.py --client-id linux-agent --stealth --disable-logging
 python3 windows_client.py --client-id windows-agent --stealth --disable-logging
 ```
+
+### Using the Telegram C2 Server
+
+Instead of the traditional HTTP-based server, you can now use the Telegram bot C2 server:
+
+1. **Get a Telegram Bot Token**:
+   - Message @BotFather on Telegram
+   - Use `/newbot` to create a new bot
+   - Get your bot token
+   - Get your Chat ID by messaging your bot and checking updates at `https://api.telegram.org/bot<TOKEN>/getUpdates`
+
+2. **Set up environment variables**:
+   ```bash
+   export TELEGRAM_BOT_TOKEN="your_bot_token_here"
+   export TELEGRAM_ADMIN_CHAT_ID="your_chat_id_here"
+   ```
+
+3. **Start the Telegram C2 Server**:
+   ```bash
+   python3 start_telegram_server.py
+   ```
+
+4. **Start a Telegram C2 Client**:
+   ```bash
+   python3 telegram_c2_client.py --client-id tg-agent-01 --beacon-interval 30
+   ```
+
+5. **Control your agents through Telegram**:
+   - Use `/agents` to list connected agents
+   - Use `/cmd agent_id command` to execute commands
+   - Use `/screenshot agent_id` to take screenshots
+   - Use `/keylog_start agent_id` to start keylogging
+   - Use `/files` to list server files
+   - And much more!
+
+For complete documentation on the Telegram C2 server, see [TELEGRAM_C2_README.md](TELEGRAM_C2_README.md).
 
 ## 🎯 Client Builder Configuration Options
 
@@ -320,14 +362,20 @@ Access it at `http://localhost:8000/simple` after starting the server.
 enhanced-c2/
 ├── main.py                 # Main FastAPI application with enhanced features
 ├── config.py               # Configuration settings with enhanced options
-├── start_server.py         # Server startup script
+├── start_server.py         # HTTP-based server startup script
+├── start_telegram_server.py # NEW: Telegram bot server startup script
 ├── gui_client_builder.py   # Advanced GUI client builder
 ├── advanced_client.py      # Enhanced multi-platform client with all features
 ├── windows_client.py       # Windows-specific enhanced client
 ├── linux_client.py         # Linux-specific enhanced client
 ├── mac_client.py           # macOS-specific enhanced client
-├── requirements.txt        # Python dependencies
+├── telegram_c2_server.py   # NEW: Telegram bot C2 server
+├── telegram_c2_client.py   # NEW: Telegram-based C2 client
+├── telegram_client_manager.py # NEW: Telegram client manager
+├── telegram_config.py      # NEW: Telegram bot configuration
+├── requirements.txt        # Python dependencies (includes Telegram bot deps)
 ├── README.md              # This file
+├── TELEGRAM_C2_README.md  # NEW: Telegram C2 server documentation
 ├── uploads/               # Upload directory
 ├── downloads/             # Download directory
 ├── screens/               # Screenshots directory
